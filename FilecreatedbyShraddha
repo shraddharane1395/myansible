@@ -1,0 +1,55 @@
+---
+- hosts : webservers
+  become : true
+  become_user : root
+  tasks :
+   - name : Install tomcat
+     yum :
+       name : tomcat
+       state : present
+   - name : Start Tomcat
+     service :
+       name : tomcat
+       state : started
+   - name : Launch tomcat application.
+     get_url :
+      url : https://tomcat.apache.org/tomcat-7.0-doc/appdev/sample/sample.war
+      dest : /usr/share/tomcat/webapps
+     notify : Restart tomcat server
+
+   - name : Create File
+     file:
+      path : "/tmp/{{item}}"
+      state : directory
+     with_items :
+       - dir1
+       - dir2
+       - dir3
+       - gitrepo
+   - name: Install packages.
+     yum:
+       name : "{{item}}"
+       state :  present
+     with_items:
+       - git
+       - docker
+   - name : Start dOCKEr
+     service :
+       name : docker
+       state : started
+
+   - name : Clone git url
+     git:
+       repo : https://github.com/shraddharane1395/myansible.git
+       dest : /tmp/gitrepo
+   - name : Build docker file
+     command : docker build -t myfirstimage:v2 .
+     args:
+      chdir : /tmp/gitrepo
+   - name : Run docker image
+     command : docker run -d -P --name shraddha  myfirstimage:v2
+  handlers:
+   - name : Restart tomcat server
+     service :
+      name : tomcat
+      state : restarted
